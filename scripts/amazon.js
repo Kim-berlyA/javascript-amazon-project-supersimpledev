@@ -1,3 +1,7 @@
+import {cart, addToCart} from '../data/cart.js';
+import {products} from '../data/products.js';
+import {formatCurrency} from './utils/money.js';
+
 let productsHTML = '';
 
 products.forEach((product) => {
@@ -21,11 +25,11 @@ products.forEach((product) => {
       </div>
 
       <div class="product-price">
-        $${(product.priceCents / 100).toFixed(2)}
+        $${formatCurrency(product.priceCents)}
       </div>
 
       <div class="product-quantity-container">
-        <select class="js-quantity-selector-${product.id}">
+        <select>
           <option selected value="1">1</option>
           <option value="2">2</option>
           <option value="3">3</option>
@@ -41,65 +45,37 @@ products.forEach((product) => {
 
       <div class="product-spacer"></div>
 
-      <div class="added-to-cart js-added-to-cart-${product.id}">
+      <div class="added-to-cart">
         <img src="images/icons/checkmark.png">
         Added
       </div>
 
-      <button class="add-to-cart-button button-primary js-add-to-cart" data-product-id="${product.id}">
+      <button class="add-to-cart-button button-primary js-add-to-cart"
+      data-product-id="${product.id}">
         Add to Cart
       </button>
-    </div>`;
+    </div>
+  `;
 });
 
 document.querySelector('.js-products-grid').innerHTML = productsHTML;
 
-const addedMessageTimeouts = {}; //create an object that takes productId: timeoutId
-document.querySelectorAll('.js-add-to-cart').forEach((button) => {
-  button.addEventListener('click', () => {
-    const {productId} = button.dataset;
+function updateCartQuantity() {
+  let cartQuantity = 0;
 
-    let matchingItem;
-
-    cart.forEach((item) => { 
-      //even though item belongs to the for each scope,because we've already assigned it's content to a variable outside the scope, we still have access to it 
-      if (productId === item.productId) {
-        matchingItem = item;
-      }
-    });
-
-    if (matchingItem) {
-      matchingItem.quantity++;
-    } else {
-      cart.push({
-        productId,
-        quantity: Number(document.querySelector(`.js-quantity-selector-${productId}`).value)
-      });
-    }
-
-    let cartQuantity = 0;
-
-    cart.forEach((item) => {
-      cartQuantity += item.quantity;
-    });
-
-    document.querySelector('.js-cart-quantity').innerHTML = cartQuantity;
-    console.log(cart);
-
-    const addedMessage = document.querySelector(`.js-added-to-cart-${productId}`);
-
-    addedMessage.classList.add('added-to-cart-visible');
-
-    const previousTimeoutId = addedMessageTimeouts[productId]; //this accesses the timeOutId of the product interacted with 
-
-    if (previousTimeoutId) { //if true, stop the time out of the product 
-      clearTimeout(previousTimeoutId);
-    }
-
-    const timeoutId = setTimeout(() => { //saves the timeout id to the timeOutId constant
-      addedMessage.classList.remove('added-to-cart-visible');
-    }, 2000);
-    addedIsVisible = true;
-    addedMessageTimeouts[productId] = timeoutId; //sets the timeout id of the new selected product in the object
+  cart.forEach((cartItem) => {
+    cartQuantity += cartItem.quantity;
   });
-});
+
+  document.querySelector('.js-cart-quantity')
+    .innerHTML = cartQuantity;
+}
+
+document.querySelectorAll('.js-add-to-cart')
+  .forEach((button) => {
+    button.addEventListener('click', () => {
+      const productId = button.dataset.productId;
+      addToCart(productId);
+      updateCartQuantity();
+    });
+  });
